@@ -66,24 +66,23 @@ function buildHoleList() {
   };
   let merTrans = geoMercator()
     .center([centerPos.x, centerPos.y])
-    .scale(8000000)
+    .scale(80000)
     .translate([0, 0]);
   const newHoleTable = holeTable.map((ele) => {
     const x = Number.parseFloat(ele.longitude);
     const y = Number.parseFloat(ele.latitude);
     const transferPoint = merTrans([x, y]);
+    console.log(transferPoint);
     ele.longitude = transferPoint[0];
     ele.latitude = transferPoint[1];
     // 绘制一个圆
-    const circleGeometry = new THREE.DodecahedronGeometry(10, 32);
+    const circleGeometry = new THREE.DodecahedronGeometry(10, 4);
     const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
     const circle = new THREE.Mesh(circleGeometry, material);
-    console.log(ele);
     circle.position.set(ele.longitude, ele.startDepth * 100, ele.latitude);
     scene.add(circle);
     return ele;
   });
-  console.log(newHoleTable);
 }
 
 function addEventListener() {
