@@ -13,46 +13,46 @@ class App {
     function generatorFaceByPoints(ps1, ps2) {
       const geometry = new THREE.BufferGeometry();
       let points = [];
-      let index = [];
-      let color = [];
-      let z = 0;
-      for (let i = 0, j = 1; i < ps1.length; i++, j++, z += 3) {
-        // 传入PS1的值
-        points.push(ps1[i].x, ps1[i].y, ps1[i].z);
-        if (j === ps2.length) {
-          index.push(z, z - 1, 1);
+      // 围面的上半部分
+      for (let i = 0, j = 1; i < ps1.length; i++, j++) {
+        const pA = ps1[i];
+        const pB = ps2[j];
+        const pC = ps2[j - 1];
+        points.push(pA.x, pA.y, pA.z);
+        if (i === ps1.length - 1) {
+          points.push(ps2[0].x, ps2[0].y, ps2[0].z);
+          points.push(pC.x, pC.y, pC.z);
         } else {
-          // 传入ps2-2的值
-          points.push(ps2[j - 1].x, ps2[j - 1].y, ps2[j - 1].z);
-          // 传入ps2的值
-          points.push(ps2[j].x, ps2[j].y, ps2[j].z);
-          index.push(z, z + 1, z + 2);
+          points.push(pB.x, pB.y, pB.z);
+          points.push(pC.x, pC.y, pC.z);
         }
-        // color.push(0.0, 1.0, 0.0);
       }
-      const vertices = new Float32Array(points);
-      const indices = new Float32Array(index);
-      // const colors = new Float32Array(color);
-      geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
-      // geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-      geometry.setIndex(new THREE.BufferAttribute(indices, 1));
-      const vertexShader = `
-  void main() {
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-      // 定义片元着色器
-      const fragmentShader = `
-  void main() {
-    gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); // 红色
-  }
-`;
-      const material = new THREE.ShaderMaterial({
-        vertexShader: vertexShader,
-        fragmentShader: fragmentShader,
+      // 围面的下半部分
+      for (let i = 0, j = 1; i < ps1.length; i++, j++) {
+        // 下面两个点，上面一个点
+        const pA = ps1[i];
+        const pB = ps1[i + 1];
+        const pC = ps2[j];
+        points.push(pA.x, pA.y, pA.z);
+        // 如果便利到最后一个点了
+        if (i === ps1.length - 1) {
+          points.push(ps1[0].x, ps1[0].y, ps1[0].z);
+          points.push(ps2[0].x, ps2[0].y, ps2[0].z);
+        } else {
+          points.push(pB.x, pB.y, pB.z);
+          points.push(pC.x, pC.y, pC.z);
+        }
+      }
+      geometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(new Float32Array(points), 3)
+      );
+      const material = new THREE.MeshBasicMaterial({
+        color: 0xff0000, // 设置材质的颜色为红色
+        side: THREE.DoubleSide,
       });
-      return new THREE.Mesh(geometry, material);
+      const mesh = new THREE.Mesh(geometry, material);
+      return mesh;
     }
     const points = [
       {
@@ -88,11 +88,13 @@ class App {
     });
     const geometry = new THREE.BufferGeometry().setFromPoints(points3);
     const geometry2 = new THREE.BufferGeometry().setFromPoints(points2);
-    const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+    const material = new THREE.LineBasicMaterial({ color: 0x00ff00 });
     const material2 = new THREE.LineBasicMaterial({ color: 0x0000ff });
     const line1 = new THREE.LineLoop(geometry, material);
     const line2 = new THREE.LineLoop(geometry2, material2);
     // 创建平面
+    // const slide = generatorFaceByPoints(points2, points3);
+    // this.scene.add(slide);
     const slide = generatorFaceByPoints(points2, points3);
     this.scene.add(slide);
     this.scene.add(line1);
