@@ -2,9 +2,7 @@ import { dataSource } from "data";
 import * as THREE from "three";
 import GUI from "lil-gui";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { createLinearGradientCanvas, convexHull } from "utils";
-
-const _ = window["_"]();
+import { createLinearGradientCanvas, convexHull, BuildSurface } from "utils";
 
 const colorMap = {
   红: 0xff0000,
@@ -66,7 +64,9 @@ class App {
   initGeometry() {
     // 1. 根据dataSource进行建模
     const result = initDataByDataSource(dataSource, this.params.scaleValue);
+    this.dataSource = result;
     for (const key of Object.keys(result)) {
+      // 渲染点
       for (let i = 0; i < result[key].length; i++) {
         const { renderX, renderY, renderZ } = result[key][i];
         const geometry = new THREE.DodecahedronGeometry(1, 4, 4);
@@ -95,14 +95,110 @@ class App {
       }
     }
   }
+  buildFace() {
+    if (!this.dataSource) {
+      alert("不能建模");
+      return;
+    }
+    if (this.operationParams) {
+      alert("不能建模");
+      return;
+    }
+    // 寻找出当前的第一个点
+    let redCount = 0;
+    let orangeCount = 0;
+    let greenCount = 0;
+    let currentColor = null;
+    let firstPointsAll = Object.keys(this.dataSource).map((key) => {
+      const currentRender = this.dataSource[key][0];
+      const x = this.dataSource[key][0].renderX;
+      const y = this.dataSource[key][0].renderY;
+      const z = this.dataSource[key][0].renderZ;
+      const pointNumber = this.dataSource[key][0].pointNumber;
+      let range = 0;
+      for (const item of this.dataSource[key]) {
+        if (item.exceed !== currentRender.exceed) {
+          break;
+        }
+        range = item.renderZ - z;
+      }
+      if (currentRender.exceed === "绿") {
+        greenCount++;
+      }
+      if (currentRender.exceed === "橙") {
+        orangeCount++;
+      }
+      if (currentRender.exceed === "红") {
+        redCount++;
+      }
+      currentColor =
+        greenCount > orangeCount ? "绿" : orangeCount > redCount ? "橙" : "红";
+      return {
+        x,
+        y: z,
+        z: y,
+        name: pointNumber,
+        exceed: currentRender.exceed,
+        range: range,
+      };
+    });
+    const feedback = BuildSurface(firstPointsAll);
+    // 创建一个几何体平面
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(feedback.vertices, 3)
+    );
+    geometry.setIndex(new THREE.BufferAttribute(feedback.indices, 1));
+    const material = new THREE.MeshBasicMaterial({
+      color: colorMap[currentColor], // 设置材质的颜色为红色
+      opacity: 0.5, // 设置材质的透明度为0.5
+      transparent: true, // 启用透明渲染
+      wireframe: true, // 启用线框模式
+      wireframeLinewidth: 2, // 设置线框宽度
+      wireframeLinecap: "round", // 设置线框端点样式
+      wireframeLinejoin: "round", // 设置线框连接点样式
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    this.scene.add(mesh);
+    this.operationParams = {
+      operationFace: mesh,
+      position: 0,
+    };
+    // 添加gui条目
+    const faceOperationFolder = this.gui.addFolder("Face Controll");
+    // 创建一个slider
+    faceOperationFolder
+      .add(this.operationParams, "position", 0, 100, 1)
+      .name("高度")
+      .onChange((val) => {
+        console.log("高度改变");
+      });
+    // // 将所有的点给他传上去
+    for (const point of firstPointsAll) {
+      this.operationParams[point.name] = {
+        changeing: true,
+        ...point,
+      };
+      console.log(this.operationParams[point.name]);
+      // 创建一个checkbox
+      faceOperationFolder
+        .add(
+          this.operationParams[point.name],
+          this.operationParams[point.name].changeing
+        )
+        .name(point.name);
+    }
+  }
   initApp() {
+    const _this = this;
     this.params = {
       scaleValue: 9,
       addFace: () => {
-        console.log("构建平面");
+        _this.buildFace();
       },
       buildSoild: () => {
-        console.log("构建土壤");
+        alert("不能建模");
       },
     };
     this.canvas = document.getElementById("renderingCanvas");
@@ -150,9 +246,7 @@ class App {
   }
   initGUI() {
     const _this = this;
-    this.gui.add(this.params, "scaleValue", [3, 6, 9]).onChange(function () {
-      console.log("改变柱子的缩放系数");
-    });
+    this.gui.add(this.params, "scaleValue", [3, 6, 9]).onChange(function () {});
     this.gui.add(this.params, "addFace").name("新增平面");
     this.gui.add(this.params, "buildSoild").name("构建土壤");
   }
