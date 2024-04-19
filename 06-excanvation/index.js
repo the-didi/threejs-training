@@ -50,7 +50,6 @@ function initDataByDataSource(datasource, scaleValue) {
       renderZ: -ele.startDepth * scaleValue,
     });
   });
-  console.log(newMap);
   return newMap;
 }
 
@@ -120,7 +119,7 @@ class App {
         if (item.exceed !== currentRender.exceed) {
           break;
         }
-        range = item.renderZ - z;
+        range = z - item.renderZ;
       }
       if (currentRender.exceed === "绿") {
         greenCount++;
@@ -133,6 +132,9 @@ class App {
       }
       currentColor =
         greenCount > orangeCount ? "绿" : orangeCount > redCount ? "橙" : "红";
+      if (currentColor !== currentRender.exceed) {
+        range = 0;
+      }
       return {
         x,
         y: z,
@@ -151,16 +153,20 @@ class App {
     );
     geometry.setIndex(new THREE.BufferAttribute(feedback.indices, 1));
     const material = new THREE.MeshBasicMaterial({
-      color: colorMap[currentColor], // 设置材质的颜色为红色
-      opacity: 0.5, // 设置材质的透明度为0.5
-      transparent: true, // 启用透明渲染
-      wireframe: true, // 启用线框模式
-      wireframeLinewidth: 2, // 设置线框宽度
-      wireframeLinecap: "round", // 设置线框端点样式
-      wireframeLinejoin: "round", // 设置线框连接点样式
+      color: 0xff0000,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.5,
+    });
+    const wireframe = new THREE.MeshBasicMaterial({
+      color: 0x000000,
+      wireframe: true,
+      transparent: true,
     });
     const mesh = new THREE.Mesh(geometry, material);
+    const wireframeMesh = new THREE.Mesh(geometry, wireframe);
     this.scene.add(mesh);
+    this.scene.add(wireframeMesh);
     this.operationParams = {
       operationFace: mesh,
       position: 0,
@@ -172,21 +178,43 @@ class App {
       .add(this.operationParams, "position", 0, 100, 1)
       .name("高度")
       .onChange((val) => {
-        console.log("高度改变");
+        // 获取到新的点
+        const newPoint = Object.entries(this.operationParams)
+          .filter((ele) => ele[1].changeing !== void 0)
+          .map((ele) => {
+            const value = ele[1];
+            const changeingY = value.changeing
+              ? value.y - (val / 100) * value.range
+              : value.y;
+            // 如果说当前正在变动的话，那么就让你更新changingY
+            if (value.changeing) {
+              this.operationParams[ele[0]].currentY = changeingY;
+            }
+            return {
+              x: value.x,
+              y: this.operationParams[ele[0]].currentY,
+              z: value.z,
+            };
+          });
+        // 再获取到新的面
+        const feedback = BuildSurface(newPoint);
+        const geometry = this.operationParams.operationFace.geometry;
+        geometry.setAttribute(
+          "position",
+          new THREE.BufferAttribute(feedback.vertices, 3)
+        );
+        geometry.setIndex(new THREE.BufferAttribute(feedback.indices, 1));
       });
     // // 将所有的点给他传上去
     for (const point of firstPointsAll) {
       this.operationParams[point.name] = {
-        changeing: true,
+        changeing: point.exceed === currentColor,
+        currentY: point.y,
         ...point,
       };
-      console.log(this.operationParams[point.name]);
       // 创建一个checkbox
       faceOperationFolder
-        .add(
-          this.operationParams[point.name],
-          this.operationParams[point.name].changeing
-        )
+        .add(this.operationParams[point.name], "changeing")
         .name(point.name);
     }
   }
