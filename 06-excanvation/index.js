@@ -135,10 +135,22 @@ class App {
       if (currentColor !== currentRender.exceed) {
         range = 0;
       }
+      // 根据XYZ 来创建一个控制点
+      // 判断currentExceed
+      const geometry = new THREE.DodecahedronGeometry(1.5, 1, 1);
+      const material = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        wireframe: true,
+        side: THREE.DoubleSide,
+      });
+      const controlPoint = new THREE.Mesh(geometry, material);
+      controlPoint.position.set(x, z, y);
+      this.scene.add(controlPoint);
       return {
         x,
         y: z,
         z: y,
+        controlPoint,
         name: pointNumber,
         exceed: currentRender.exceed,
         range: range,
@@ -159,27 +171,40 @@ class App {
       opacity: 0.5,
     });
     const wireframe = new THREE.MeshBasicMaterial({
-      color: 0x000000,
+      color: 0xffffff,
       wireframe: true,
-      transparent: true,
+      wireframeLinewidth: 5,
     });
     const mesh = new THREE.Mesh(geometry, material);
     const wireframeMesh = new THREE.Mesh(geometry, wireframe);
     this.scene.add(mesh);
     this.scene.add(wireframeMesh);
-    this.operationParams = {
+    if (!this.operationParams) {
+      this.operationParams = {
+        faces: [],
+      };
+    }
+    const index = this.operationParams.faces.length;
+    let faceParams = {
       operationFace: mesh,
       position: 0,
+      material: currentColor,
     };
+    this.operationParams.faces.push(faceParams);
+    const currentFace = this.operationParams.faces[index];
     // 添加gui条目
-    const faceOperationFolder = this.gui.addFolder("Face Controll");
+    const faceOperationFolder = this.gui.addFolder(
+      `土壤层面${this.operationParams.faces.length}`
+    );
+
     // 创建一个slider
     faceOperationFolder
-      .add(this.operationParams, "position", 0, 100, 1)
+      .add(currentFace, "position", 0, 100, 1)
       .name("高度")
       .onChange((val) => {
+        // 高度改变的时候，控制点的位置也要变
         // 获取到新的点
-        const newPoint = Object.entries(this.operationParams)
+        const newPoint = Object.entries(currentFace)
           .filter((ele) => ele[1].changeing !== void 0)
           .map((ele) => {
             const value = ele[1];
@@ -188,35 +213,62 @@ class App {
               : value.y;
             // 如果说当前正在变动的话，那么就让你更新changingY
             if (value.changeing) {
-              this.operationParams[ele[0]].currentY = changeingY;
+              currentFace[ele[0]].currentY = changeingY;
             }
+            // 改变对应高度的控制点
+            currentFace[ele[0]].controlPoint.position.set(
+              value.x,
+              currentFace[ele[0]].currentY,
+              value.z
+            );
             return {
               x: value.x,
-              y: this.operationParams[ele[0]].currentY,
+              y: currentFace[ele[0]].currentY,
               z: value.z,
             };
           });
         // 再获取到新的面
         const feedback = BuildSurface(newPoint);
-        const geometry = this.operationParams.operationFace.geometry;
+        const geometry = currentFace.operationFace.geometry;
         geometry.setAttribute(
           "position",
           new THREE.BufferAttribute(feedback.vertices, 3)
         );
         geometry.setIndex(new THREE.BufferAttribute(feedback.indices, 1));
       });
+    faceOperationFolder
+      .add(currentFace, "material", ["红", "橙", "绿"])
+      .name("土壤材质")
+      .onChange((val) => {
+        const color = colorMap[val];
+        currentFace.operationFace.material.color.set(color);
+      });
+    faceOperationFolder.add(currentFace, "changeMaterial");
     // // 将所有的点给他传上去
     for (const point of firstPointsAll) {
-      this.operationParams[point.name] = {
+      currentFace[point.name] = {
         changeing: point.exceed === currentColor,
         currentY: point.y,
         ...point,
       };
+      if (point.exceed !== currentColor) {
+        point.controlPoint.material.color.set(0x000000);
+      }
       // 创建一个checkbox
       faceOperationFolder
-        .add(this.operationParams[point.name], "changeing")
-        .name(point.name);
+        .add(currentFace[point.name], "changeing")
+        .name(point.name)
+        .onChange((val) => {
+          if (val) {
+            point.controlPoint.material.color.set(0xffffff);
+          } else {
+            point.controlPoint.material.color.set(0x000000);
+          }
+        });
     }
+    console.log(currentFace);
+    currentFace["folder"] = faceOperationFolder;
+    this.operationParams.faces[index] = currentFace;
   }
   initApp() {
     const _this = this;
