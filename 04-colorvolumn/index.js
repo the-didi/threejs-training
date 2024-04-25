@@ -16,12 +16,10 @@ class App {
     this.params = {
       colorMap: "cooltowarm",
     };
-
     // Init canvas
     this.canvas = document.getElementById("renderingCanvas");
     this.canvas.width = this.canvas.clientWidth;
     this.canvas.height = this.canvas.clientHeight;
-
     // Init gui
     this.gui = new GUI();
     this.gui.add(document, "title");

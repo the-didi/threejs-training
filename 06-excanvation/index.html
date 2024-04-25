@@ -11,6 +11,17 @@
     <script src="../lib/d3-delaunay.min.js"></script>
     <script src="./kriging.js"></script>
     <canvas id="renderingCanvas"></canvas>
+    <div id="custom"></div>
+    <div id="volumn"></div>
+    <div id="volume"></div>
+    <div class="color-bar-container">
+      <div class="unit" id="unit"></div>
+      <canvas id="colorBar"></canvas>
+    </div>
+    <div class="volumn-value">
+      当前测算污染土壤方量为: <span id="volumnValue">27057</span> (立方米)
+    </div>
+    <div id="materialBar"></div>
     <script type="importmap">
       {
         "imports": {
@@ -22,7 +33,8 @@
           "three-mesh-bvh": "https://unpkg.com/three-mesh-bvh@0.7.0/build/index.module.js",
           "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm",
           "utils": "../lib/utils/utils.js",
-          "data": "./data.js"
+          "data": "./data.js",
+          "idw": "./idw.js"
         }
       }
     </script>

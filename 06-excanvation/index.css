@@ -4,9 +4,72 @@ html,body{
   margin: 0;
   padding: 0;
   box-sizing: border-box;  
+  overflow: hidden;
 }
 
 #renderingCanvas{
   width: 100%;
   height: 100%;
+}
+#custom{
+  position: fixed;
+  right: 265px;
+  top: 0;
+}
+#volumn{
+  position: fixed;
+  top: 0;
+  right: 515px;
+}
+
+#volume {
+  position: fixed;
+  top: 0;
+  right: calc(515px + 245px + 5px);
+}
+
+#materialBar{
+  position: fixed;
+  width: 65px;
+  height: 300px;
+  top: 10px;
+  left: 15px;
+}
+.color-bar-container{
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  display: flex;
+  flex-direction: row;
+  width: auto;
+  height: auto;
+  align-items: center;
+}
+.volumn-value{
+  position: fixed;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 24px;
+  color: #fff;
+}
+
+.unit{
+  width: 100%;
+  height: 400px;
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: space-between;
+  font-size: 24px;
+  color: #fff;
+}
+
+#colorBar{
+
+  width: 100px;
+  height: 400px;
+}
+
+.lil-gui > .children{
+  max-height: 500px;
 }
