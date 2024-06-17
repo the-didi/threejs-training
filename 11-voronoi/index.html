@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>泰深多边形</title>
+    <link rel="stylesheet" href="./index.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+  </head>
+  <body>
+    <canvas id="renderingCanvas"></canvas>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "../lib/build/three.module.js",
+          "three/addons/": "../lib/examples/jsm/",
+          "three/examples/": "../lib/examples/",
+          "models": "../lib/examples/models",
+          "three-gpu-pathtracer": "https://unpkg.com/three-gpu-pathtracer@0.0.17/build/index.module.js",
+          "three-mesh-bvh": "https://unpkg.com/three-mesh-bvh@0.7.0/build/index.module.js",
+          "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm",
+          "utils": "../lib/utils/utils.js",
+          "data": "./data.js"
+        }
+      }
+    </script>
+    <script type="module" src="./index.js"></script>
+  </body>
+</html>
